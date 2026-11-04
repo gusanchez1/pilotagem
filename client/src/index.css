@@ -1,0 +1,91 @@
+@import 'tailwindcss';
+
+/*
+ * PILOTAGEM — tokens visuais
+ * Base: identidade Pilotech (amarelo #FFED00 + preto), aplicada com parcimônia sobre
+ * uma interface neutra de produto SaaS.
+ */
+@theme {
+  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: 'Saira Variable', 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
+
+  --color-brand: #ffed00;
+  --color-brand-hover: #f5e300;
+  --color-brand-press: #e6d500;
+  --color-brand-soft: #fffbcc;
+
+  --color-ink: #0a0a0a;
+  --color-canvas: #f6f6f4;
+  --color-surface: #ffffff;
+  --color-line: #e7e6e3;
+  --color-line-strong: #d6d5d1;
+
+  --color-series-1: #2a78d6;
+  --color-series-2: #eb6834;
+  --color-series-3: #1baf7a;
+  --color-series-ink: #27272a;
+
+  --shadow-pop: 0 1px 2px rgb(0 0 0 / 0.04), 0 8px 24px -6px rgb(0 0 0 / 0.12);
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.04);
+
+  --animate-fade-in: fade-in 160ms ease-out;
+  --animate-pop-in: pop-in 180ms cubic-bezier(0.2, 0.9, 0.3, 1.1);
+  --animate-slide-in: slide-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes pop-in {
+    from { opacity: 0; transform: translateY(6px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  @keyframes slide-in {
+    from { opacity: 0; transform: translateX(24px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    @apply bg-canvas text-zinc-900 font-sans text-sm;
+    font-feature-settings: 'cv11', 'ss01';
+  }
+  ::selection {
+    background: var(--color-brand);
+    color: var(--color-ink);
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-ink);
+    outline-offset: 2px;
+  }
+  input[type='date']::-webkit-calendar-picker-indicator,
+  input[type='time']::-webkit-calendar-picker-indicator {
+    opacity: 0.5;
+    cursor: pointer;
+  }
+}
+
+@utility tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Barra inclinada — eco discreto do ângulo do símbolo Pilotech */
+@utility skew-mark {
+  transform: skewX(-18deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 1ms !important;
+    transition-duration: 1ms !important;
+  }
+}
+
+/* Barra de rolagem discreta */
+.scroll-thin { scrollbar-width: thin; scrollbar-color: #d4d4d8 transparent; }

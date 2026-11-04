@@ -1,0 +1,31 @@
+{
+  "name": "pilotagem",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "PILOTAGEM — MVP de Sistema de Controle Financeiro e Gestão Operacional para Academia de Automobilismo",
+  "workspaces": [
+    "server",
+    "client"
+  ],
+  "engines": {
+    "node": ">=20.19"
+  },
+  "scripts": {
+    "setup": "node scripts/setup.js",
+    "doctor": "node scripts/doctor.js",
+    "dev": "concurrently -k -n API,WEB -c yellow,cyan \"npm run dev -w server\" \"npm run dev -w client\"",
+    "dev:server": "npm run dev -w server",
+    "dev:client": "npm run dev -w client",
+    "build": "npm run build -w client",
+    "demo": "npm run build -w client && npm run start -w server",
+    "start": "npm run start -w server",
+    "seed": "npm run seed -w server",
+    "seed:reset": "npm run seed -w server",
+    "test": "npm test -w server",
+    "lint": "npm run lint -w server && npm run lint -w client"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.0"
+  }
+}
