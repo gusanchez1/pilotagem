@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PILOTAGEM</title>
+<meta name="description" content="Sistema de controle financeiro e gestão operacional para academia de automobilismo. MVP acadêmico de Ciência da Computação apresentado no 4º CONTEEX.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="PILOTAGEM">
+<meta property="og:description" content="Agenda, salas, simuladores e financeiro em uma única pista. MVP acadêmico apresentado no 4º CONTEEX.">
+<meta property="og:image" content="https://gusanchez1.github.io/pilotagem/img/admin-dashboard.png">
+<meta property="og:url" content="https://gusanchez1.github.io/pilotagem/">
+<meta name="theme-color" content="#0a0a0a">
+<link rel="icon" type="image/png" href="img/icon-192.png">
+<link rel="apple-touch-icon" href="img/icon-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Saira:ital,wght@1,600;1,700;1,800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: faixa escura de abertura (identidade do produto) → galeria de telas em abas → problemas resolvidos → roteiro → instalação → mais do projeto */
+:root {
+  --bg: #f5f5f2;
+  --surface: #ffffff;
+  --fg: #141414;
+  --muted: #62625d;
+  --line: #e3e2dc;
+  --brand: #ffed00;
+  --ink: #0a0a0a;
+  --ink-fg: #f4f4f1;
+  --ink-muted: #9b9b94;
+  --code-bg: #f0efe9;
+  --focus: #0a0a0a;
+  --f-display: 'Saira', 'Arial Narrow', system-ui, sans-serif;
+  --f-body: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --f-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #111110; --surface: #1a1a18; --fg: #ecebe6; --muted: #a3a29b; --line: #2c2c29;
+    --ink: #050505; --code-bg: #232320; --focus: #ffed00; color-scheme: dark;
+  }
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.6 var(--f-body); -webkit-font-smoothing: antialiased; }
+img { max-width: 100%; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+a { color: inherit; }
+.wrap { max-width: 1120px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+h1, h2, h3 { text-wrap: balance; margin: 0; }
+p { margin: 0; }
+.eyebrow { font-size: 12px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+
+/* Abertura */
+.hero { background: var(--ink); color: var(--ink-fg); position: relative; overflow: hidden; padding-top: env(safe-area-inset-top, 0px); }
+.hero::before { content: ""; position: absolute; left: 0; top: 0; width: 180px; height: 4px; background: var(--brand); transform: skewX(-24deg); transform-origin: left; }
+.hero .wrap { padding-block: 56px 0; display: grid; gap: 28px; }
+.mark { display: flex; align-items: center; gap: 12px; }
+.mark img { width: 44px; height: auto; flex: none; }
+.mark span { font: italic 800 26px/1 var(--f-display); letter-spacing: .06em; }
+.hero h1 { font: italic 700 clamp(30px, 5.4vw, 52px)/1.05 var(--f-display); letter-spacing: -.01em; max-width: 18ch; }
+.hero h1 em { font-style: italic; color: var(--brand); }
+.hero .lead { color: var(--ink-muted); max-width: 62ch; font-size: 16px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chips a { text-decoration: none; font: 500 14px/1 var(--f-body); color: var(--ink-fg); border: 1px solid #3a3a37; border-radius: 999px; padding: 10px 14px; }
+.chips a:hover { border-color: var(--brand); color: var(--brand); }
+.facts { display: flex; flex-wrap: wrap; gap: 10px 28px; padding-top: 4px; }
+.facts div { display: flex; flex-direction: column; }
+.facts b { font: italic 700 28px/1.1 var(--f-display); color: var(--ink-fg); font-variant-numeric: tabular-nums; }
+.facts small { font-size: 12px; color: var(--ink-muted); }
+.hero-shot { margin-top: 8px; border-radius: 10px 10px 0 0; overflow: hidden; border: 1px solid #262624; border-bottom: 0; aspect-ratio: 16 / 9; max-width: 100%; }
+.hero-shot img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top left; }
+
+/* Seções */
+section { padding-block: 64px; }
+section + section { border-top: 1px solid var(--line); }
+.section-head { display: grid; gap: 8px; margin-bottom: 28px; max-width: 70ch; }
+.section-head h2 { font: italic 700 clamp(24px, 3.4vw, 32px)/1.15 var(--f-display); }
+.section-head p { color: var(--muted); }
+
+/* Galeria */
+.tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
+.tab { font: 500 14px/1 var(--f-body); color: var(--muted); background: transparent; border: 1px solid var(--line); border-radius: 999px; padding: 9px 14px; cursor: pointer; }
+.tab:hover { color: var(--fg); }
+.tab[aria-selected="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.stage { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.stage-img { max-height: 72vh; overflow: auto; background: var(--code-bg); display: flex; justify-content: center; align-items: flex-start; }
+.stage-img img { display: block; width: 100%; height: auto; }
+.stage-img.narrow img { width: min(390px, 100%); }
+.stage-cap { display: grid; gap: 4px; padding: 16px 20px; border-top: 1px solid var(--line); }
+.stage-cap h3 { font-size: 16px; font-weight: 600; }
+.stage-cap p { color: var(--muted); font-size: 14px; max-width: 80ch; }
+.stage-cap .who { font-size: 12px; color: var(--muted); }
+.thumbs { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-top: 12px; }
+.thumb { all: unset; cursor: pointer; display: grid; gap: 6px; }
+.thumb img { width: 100%; aspect-ratio: 16 / 10; object-fit: cover; object-position: top left; border-radius: 6px; border: 1px solid var(--line); display: block; }
+.thumb span { font-size: 12.5px; color: var(--muted); line-height: 1.3; }
+.thumb[aria-current="true"] img { outline: 2px solid var(--fg); outline-offset: 1px; }
+.thumb[aria-current="true"] span { color: var(--fg); font-weight: 500; }
+.thumb:focus-visible img { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+/* Problema → solução */
+.pairs { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.pair { background: var(--surface); padding: 22px; display: grid; gap: 10px; align-content: start; }
+.pair .before { font-size: 13.5px; color: var(--muted); }
+.pair .before::before { content: "Hoje  "; font-weight: 600; letter-spacing: .08em; font-size: 11px; text-transform: uppercase; }
+.pair .after { font-weight: 500; }
+.pair .after::before { content: ""; display: inline-block; width: 14px; height: 4px; background: var(--brand); transform: skewX(-24deg); margin-right: 8px; vertical-align: middle; box-shadow: 0 0 0 1px rgba(0,0,0,.15); }
+
+/* Roteiro */
+.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; counter-reset: s; }
+.steps li { counter-increment: s; display: grid; grid-template-columns: 44px 1fr; gap: 14px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+.steps li::before { content: counter(s, decimal-leading-zero); font: italic 700 20px/1.3 var(--f-display); color: var(--muted); font-variant-numeric: tabular-nums; }
+.steps b { font-weight: 600; }
+.steps span { color: var(--muted); }
+
+/* Instalação */
+.setup { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 28px; }
+@media (max-width: 820px) { .setup { grid-template-columns: 1fr; } }
+.cmds { display: grid; gap: 10px; }
+.cmd { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 10px; background: var(--code-bg); border-radius: 8px; padding: 10px 10px 10px 14px; min-width: 0; }
+.cmd code { font: 14px/1.4 var(--f-mono); overflow-x: auto; white-space: nowrap; }
+.cmd small { grid-column: 1 / -1; color: var(--muted); font-size: 12.5px; margin-top: -4px; }
+.copy { font: 500 12px/1 var(--f-body); background: var(--surface); color: var(--fg); border: 1px solid var(--line); border-radius: 6px; padding: 7px 10px; cursor: pointer; }
+.copy:hover { border-color: var(--muted); }
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th { font-size: 12px; font-weight: 600; color: var(--muted); letter-spacing: .04em; }
+tr:last-child td { border-bottom: 0; }
+td code { font: 13px var(--f-mono); }
+.note { margin-top: 14px; font-size: 13.5px; color: var(--muted); }
+
+/* Mais do projeto */
+.more { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+.more a { text-decoration: none; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px; display: grid; gap: 4px; }
+.more a:hover { border-color: var(--fg); }
+.more b { font-weight: 600; }
+.more span { color: var(--muted); font-size: 14px; }
+
+footer { padding-block: 28px calc(48px + env(safe-area-inset-bottom, 0px)); color: var(--muted); font-size: 13px; border-top: 1px solid var(--line); }
+
+@media (max-width: 560px) {
+  .hero .wrap { padding-block: 40px 0; }
+  section { padding-block: 44px; }
+  .thumbs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="mark" aria-label="PILOTAGEM">
+      <img src="img/simbolo-amarelo.png" alt="" width="600" height="348">
+      <span>PILOTAGEM</span>
+    </div>
+    <h1>Agenda, salas, simuladores e financeiro em <em>uma única pista</em>.</h1>
+    <p class="lead">Sistema interno feito para a academia de pilotagem da Pilotech: recepção, instrutores, financeiro e administração trabalhando na mesma base, no lugar de Google Agenda, grupo de WhatsApp, Granatum e planilha.</p>
+    <nav class="chips" aria-label="Seções">
+      <a href="#telas">Telas</a>
+      <a href="#roteiro">Roteiro da demonstração</a>
+      <a href="por-dentro/">Arquitetura e banco de dados</a>
+      <a href="https://github.com/gusanchez1/pilotagem">Código no GitHub</a>
+    </nav>
+    <div class="facts">
+      <div><b>4</b><small>perfis de acesso</small></div>
+      <div><b>13</b><small>relatórios com CSV e PDF</small></div>
+      <div><b>59</b><small>testes automatizados</small></div>
+      <div><b>R$ 0</b><small>de custo: roda 100% local</small></div>
+    </div>
+    <div class="hero-shot"><img src="img/admin-dashboard.png" alt="Dashboard do administrador com indicadores financeiros, gráficos e alertas" loading="eager"></div>
+  </div>
+</header>
+
+<main>
+  <section class="wrap" id="telas">
+    <div class="section-head">
+      <p class="eyebrow">Capturas reais do sistema</p>
+      <h2>As telas</h2>
+      <p>Tudo abaixo foi capturado do sistema rodando com os dados de demonstração. Clientes, funcionários, salas e valores são fictícios.</p>
+    </div>
+    <div class="tabs" role="tablist" id="tabs"></div>
+    <figure class="stage" style="margin:0">
+      <div class="stage-img" id="stageImg"><img id="stagePic" alt=""></div>
+      <figcaption class="stage-cap">
+        <span class="who" id="stageWho"></span>
+        <h3 id="stageTitle"></h3>
+        <p id="stageText"></p>
+      </figcaption>
+    </figure>
+    <div class="thumbs" id="thumbs"></div>
+  </section>
+
+  <section class="wrap" id="problemas">
+    <div class="section-head">
+      <p class="eyebrow">Levantado com a recepção</p>
+      <h2>O que muda na rotina</h2>
+    </div>
+    <div class="pairs">
+      <div class="pair"><p class="before">Agendas do Google e dos sites não conversam, e a recepção remaneja horários na mão.</p><p class="after">Uma agenda só, que confere instrutor, sala e cada simulador antes de confirmar e impede dois clientes no mesmo equipamento.</p></div>
+      <div class="pair"><p class="before">Comprovantes ficam num grupo de WhatsApp.</p><p class="after">Cada pagamento é registrado na venda, com o comprovante anexado ou referenciado e o histórico de quem lançou.</p></div>
+      <div class="pair"><p class="before">Vendas no Granatum e numa planilha mensal da recepção.</p><p class="after">Vendido, recebido, a receber e atrasado calculados na hora. Cartão parcelado não é confundido com dinheiro em caixa.</p></div>
+      <div class="pair"><p class="before">Salas podem estar reservadas, alugadas ou em manutenção sem um lugar para conferir.</p><p class="after">Quadro do dia com a ocupação de cada sala, simulador e instrutor, incluindo locações, eventos e manutenção.</p></div>
+      <div class="pair"><p class="before">Instrutores consultam horários por fora.</p><p class="after">Portal próprio com os treinamentos do dia, sala e equipamentos reservados, sem acesso ao financeiro.</p></div>
+      <div class="pair"><p class="before">Clientes conhecidos pedem discrição.</p><p class="after">Cliente confidencial aparece só pelo nome de exibição. Ver os dados reais fica registrado na auditoria.</p></div>
+    </div>
+  </section>
+
+  <section class="wrap" id="roteiro">
+    <div class="section-head">
+      <p class="eyebrow">Para o dia da apresentação</p>
+      <h2>Roteiro da demonstração</h2>
+      <p>A sequência pedida no enunciado. Ela também é verificada por um teste automatizado, então funciona do começo ao fim.</p>
+    </div>
+    <ol class="steps">
+      <li><div><b>Entrar como Recepção</b> <span>pelo botão de acesso rápido na tela de login.</span></div></li>
+      <li><div><b>Cadastrar um cliente</b> <span>só nome, sobrenome e telefone, como a recepção já coleta hoje.</span></div></li>
+      <li><div><b>Mostrar o catálogo</b> <span>com o preço por quantidade do Racing Room (1 a 4 simuladores).</span></div></li>
+      <li><div><b>Vender um pacote</b> <span>em Novo › Nova venda.</span></div></li>
+      <li><div><b>Agendar a sessão</b> <span>com instrutor, sala e simulador; o painel de disponibilidade confirma ou aponta o conflito.</span></div></li>
+      <li><div><b>Registrar um Pix parcial</b> <span>e ver recebido e saldo pendente mudarem na hora.</span></div></li>
+      <li><div><b>Entrar como Instrutor</b> <span>e iniciar e concluir a sessão no portal.</span></div></li>
+      <li><div><b>Entrar como Administrador</b> <span>e mostrar o dashboard atualizado e o relatório em PDF.</span></div></li>
+    </ol>
+  </section>
+
+  <section class="wrap" id="instalar">
+    <div class="section-head">
+      <p class="eyebrow">Para rodar no seu computador</p>
+      <h2>Instalação</h2>
+      <p>Precisa de Node.js (versão 22 LTS) e MongoDB Community Server, ambos gratuitos. O passo a passo completo para Windows e macOS está no arquivo <a href="https://github.com/gusanchez1/pilotagem/blob/main/LOCAL_SETUP.md">LOCAL_SETUP.md</a> do projeto.</p>
+    </div>
+    <div class="setup">
+      <div class="cmds">
+        <div class="cmd"><code>npm install</code><button class="copy" type="button">Copiar</button><small>Instala tudo. É o único passo que precisa de internet.</small></div>
+        <div class="cmd"><code>npm run setup</code><button class="copy" type="button">Copiar</button><small>Cria os arquivos de configuração.</small></div>
+        <div class="cmd"><code>npm run seed</code><button class="copy" type="button">Copiar</button><small>Carrega os dados de demonstração. Rode no dia da apresentação.</small></div>
+        <div class="cmd"><code>npm run demo</code><button class="copy" type="button">Copiar</button><small>Abre o sistema em http://localhost:4000</small></div>
+        <div class="cmd"><code>npm run doctor</code><button class="copy" type="button">Copiar</button><small>Se algo der errado, mostra o que falta.</small></div>
+      </div>
+      <div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Perfil</th><th>E-mail</th><th>Senha</th></tr></thead>
+            <tbody>
+              <tr><td>Administrador</td><td><code>admin@pilotagem.local</code></td><td><code>Admin@123</code></td></tr>
+              <tr><td>Recepção</td><td><code>recepcao1@pilotagem.local</code></td><td><code>Recepcao@123</code></td></tr>
+              <tr><td>Financeiro</td><td><code>financeiro@pilotagem.local</code></td><td><code>Financeiro@123</code></td></tr>
+              <tr><td>Instrutor</td><td><code>instrutor1@pilotagem.local</code></td><td><code>Instrutor@123</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="note">Contas de demonstração, com dados fictícios. Só funcionam numa instalação local. Na tela de login há um botão para cada perfil.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap" id="mais">
+    <div class="section-head">
+      <h2>Mais do projeto</h2>
+    </div>
+    <div class="more">
+      <a href="por-dentro/"><b>Por dentro do sistema</b><span>Arquitetura, banco de dados, controle de concorrência, regra financeira e testes.</span></a>
+      <a href="https://github.com/gusanchez1/pilotagem"><b>Código no GitHub</b><span>Repositório completo, com instruções para rodar localmente.</span></a>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">PILOTAGEM · MVP acadêmico de Ciência da Computação apresentado no 4º CONTEEX. Stack MERN (MongoDB, Express, React, Node.js). Os preços do catálogo vêm dos sites públicos e ainda não foram confirmados pela empresa.</div>
+</footer>
+
+<script>
+const SCREENS = [
+  { tab: 'Visão geral', items: [
+    { img: 'admin-dashboard', title: 'Dashboard do administrador', who: 'Administrador', text: 'Vendido, recebido, despesas pagas, resultado, a receber e em atraso, calculados a partir do banco. Gráficos mensais, faturamento por modalidade, despesas por categoria, alertas e próximos treinamentos.' },
+    { img: 'rec-dashboard', title: 'Dashboard da recepção', who: 'Recepção', text: 'Versão operacional: agenda do dia, salas livres ou ocupadas agora e solicitações aguardando confirmação. Sem números financeiros gerais.' },
+    { img: 'login', title: 'Tela de login', who: 'Todos', text: 'Acesso por perfil, com botões de acesso rápido às contas de demonstração.' },
+  ]},
+  { tab: 'Operação', items: [
+    { img: 'admin-agenda-semana', title: 'Agenda da semana', who: 'Recepção e administração', text: 'Cada cor é um instrutor. Também há visão de dia, mês e lista, com filtros por instrutor, sala e status.' },
+    { img: 'admin-agenda-novo', title: 'Novo agendamento', who: 'Recepção', text: 'Ao escolher horário, instrutor, sala e simuladores, o painel à direita confere a disponibilidade de cada recurso antes de salvar. Na Racing Room o preço muda conforme a quantidade de simuladores.' },
+    { img: 'admin-reservas', title: 'Quadro de reservas do dia', who: 'Recepção e administração', text: 'Ocupação de cada sala, simulador e instrutor ao longo do dia. Manutenção aparece hachurada; clicar num horário livre abre uma reserva.' },
+    { img: 'admin-agenda-mes', title: 'Agenda do mês', who: 'Recepção e administração', text: 'Visão mensal com os horários de cada dia.' },
+    { img: 'admin-clientes', title: 'Clientes', who: 'Recepção', text: 'Cadastro mínimo: nome, sobrenome e telefone. Busca por nome, telefone ou código.' },
+    { img: 'admin-cliente-conf', title: 'Cliente confidencial', who: 'Recepção e administração', text: 'Por padrão só aparece o nome de exibição. Revelar os dados reais exige permissão e gera um registro na auditoria.' },
+  ]},
+  { tab: 'Financeiro', items: [
+    { img: 'admin-venda-detalhe', title: 'Detalhe da venda', who: 'Financeiro e recepção', text: 'Contratado, recebido, programado e saldo separados. Exemplo: R$ 2.000 em Pix na hora e R$ 4.000 no cartão em 2x, que só contam como recebidos quando o repasse é confirmado.' },
+    { img: 'admin-vendas', title: 'Vendas', who: 'Financeiro e recepção', text: 'Serviços, pacotes, locações e vendas personalizadas, com filtros por período e situação do pagamento.' },
+    { img: 'admin-receber', title: 'Contas a receber', who: 'Financeiro', text: 'Parcelas a receber, vencidas e recebidas, com confirmação da data em que o dinheiro entrou.' },
+    { img: 'admin-despesas', title: 'Despesas', who: 'Financeiro', text: 'Contas a pagar por categoria. Cancelamentos e estornos ficam no histórico com motivo.' },
+    { img: 'admin-relatorios', title: 'Relatórios', who: 'Financeiro e administração', text: '13 relatórios financeiros e operacionais, com totais e exportação em CSV (abre no Excel) e PDF.' },
+  ]},
+  { tab: 'Cadastros e controle', items: [
+    { img: 'admin-catalogo', title: 'Serviços e pacotes', who: 'Administrador', text: 'Catálogo editável sem mexer no código. Alterar um preço não muda vendas já registradas.' },
+    { img: 'admin-salas', title: 'Salas e equipamentos', who: 'Administrador', text: 'Salas com capacidade, valor de locação e ocupação em tempo real; simuladores com status de manutenção.' },
+    { img: 'admin-instrutores', title: 'Instrutores', who: 'Administrador', text: 'Especialidade, contato e agenda individual de cada instrutor.' },
+    { img: 'admin-auditoria', title: 'Auditoria', who: 'Administrador', text: 'Logins, remanejamentos, cancelamentos, estornos, exportações e acessos a dados confidenciais, com usuário, data e hora.' },
+    { img: 'admin-config', title: 'Configurações', who: 'Administrador', text: 'Usuários e perfis, autorizações da recepção e dos instrutores e restauração dos dados de demonstração.' },
+  ]},
+  { tab: 'Instrutor e celular', items: [
+    { img: 'ins-portal', title: 'Portal do instrutor', who: 'Instrutor', text: 'Treinamentos do dia, próximos e calendário pessoal. O instrutor inicia e conclui a sessão e registra observações. Não vê valores.' },
+    { img: 'fin-dashboard-mobile', title: 'Dashboard no celular', who: 'Financeiro', text: 'A interface se adapta a telas pequenas.', narrow: true },
+  ]},
+];
+
+const $ = (id) => document.getElementById(id);
+
+function show(t, i) {
+  const group = SCREENS[t];
+  const item = group.items[i];
+  [...$('tabs').children].forEach((b, k) => b.setAttribute('aria-selected', String(k === t)));
+  $('stagePic').src = `img/${item.img}.png`;
+  $('stagePic').alt = item.title;
+  $('stageImg').classList.toggle('narrow', Boolean(item.narrow));
+  $('stageImg').scrollTop = 0;
+  $('stageWho').textContent = `Perfil: ${item.who}`;
+  $('stageTitle').textContent = item.title;
+  $('stageText').textContent = item.text;
+  $('thumbs').innerHTML = '';
+  group.items.forEach((it, k) => {
+    const b = document.createElement('button');
+    b.className = 'thumb';
+    b.type = 'button';
+    b.setAttribute('aria-current', String(k === i));
+    b.innerHTML = `<img src="img/${it.img}.png" alt="" loading="lazy"><span></span>`;
+    b.querySelector('span').textContent = it.title;
+    b.addEventListener('click', () => show(t, k));
+    $('thumbs').appendChild(b);
+  });
+}
+
+SCREENS.forEach((g, t) => {
+  const b = document.createElement('button');
+  b.className = 'tab';
+  b.type = 'button';
+  b.setAttribute('role', 'tab');
+  b.textContent = g.tab;
+  b.addEventListener('click', () => show(t, 0));
+  $('tabs').appendChild(b);
+});
+show(0, 0);
+
+document.querySelectorAll('.copy').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    const code = btn.parentElement.querySelector('code');
+    const done = () => { btn.textContent = 'Copiado'; setTimeout(() => (btn.textContent = 'Copiar'), 1500); };
+    const select = () => { const r = document.createRange(); r.selectNodeContents(code); const s = getSelection(); s.removeAllRanges(); s.addRange(r); };
+    if (navigator.clipboard) navigator.clipboard.writeText(code.textContent).then(done).catch(select);
+    else select();
+  });
+});
+</script>
+</body>
+</html>

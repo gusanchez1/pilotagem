@@ -1,0 +1,519 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PILOTAGEM por dentro</title>
+<meta name="description" content="Arquitetura, banco de dados, controle de concorrência, regra financeira e testes do PILOTAGEM.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="PILOTAGEM por dentro">
+<meta property="og:description" content="Arquitetura, banco de dados e as regras que evitam reservas duplicadas e confusão entre vendido e recebido.">
+<meta property="og:image" content="https://gusanchez1.github.io/pilotagem/img/admin-dashboard.png">
+<meta property="og:url" content="https://gusanchez1.github.io/pilotagem/por-dentro/">
+<meta name="theme-color" content="#0a0a0a">
+<link rel="icon" type="image/png" href="../img/icon-192.png">
+<link rel="apple-touch-icon" href="../img/icon-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Saira:ital,wght@1,600;1,700;1,800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: faixa escura de abertura (mesma identidade da Vitrine) → seções empilhadas, uma por link do Linktree, cada uma com um diagrama e uma legenda curta */
+:root {
+  --bg: #f5f5f2;
+  --surface: #ffffff;
+  --fg: #141414;
+  --muted: #62625d;
+  --line: #e3e2dc;
+  --line-strong: #b9b8b0;
+  --brand: #ffed00;
+  --on-brand: #0a0a0a;
+  --ink: #0a0a0a;
+  --ink-fg: #f4f4f1;
+  --ink-muted: #9b9b94;
+  --code-bg: #f0efe9;
+  --focus: #0a0a0a;
+  --f-display: 'Saira', 'Arial Narrow', system-ui, sans-serif;
+  --f-body: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --f-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111110; --surface: #1a1a18; --fg: #ecebe6; --muted: #a3a29b; --line: #2c2c29; --line-strong: #4a4a45;
+    --ink: #050505; --code-bg: #232320; --focus: #ffed00; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111110; --surface: #1a1a18; --fg: #ecebe6; --muted: #a3a29b; --line: #2c2c29; --line-strong: #4a4a45;
+  --ink: #050505; --code-bg: #232320; --focus: #ffed00; color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+img { max-width: 100%; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.6 var(--f-body); -webkit-font-smoothing: antialiased; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+a { color: inherit; }
+.wrap { max-width: 860px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+h1, h2, h3 { margin: 0; text-wrap: balance; }
+p { margin: 0; }
+code, .mono { font-family: var(--f-mono); font-size: .92em; }
+.eyebrow { font-size: 12px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+
+/* Abertura */
+.hero { background: var(--ink); color: var(--ink-fg); position: relative; overflow: hidden; padding-top: env(safe-area-inset-top, 0px); }
+.hero::before { content: ""; position: absolute; left: 0; top: 0; width: 180px; height: 4px; background: var(--brand); transform: skewX(-24deg); transform-origin: left; }
+.hero .wrap { padding-block: 48px 36px; display: grid; gap: 22px; }
+.mark { display: flex; align-items: center; gap: 12px; }
+.mark img { width: 40px; height: auto; flex: none; }
+.mark span { font: italic 800 24px/1 var(--f-display); letter-spacing: .06em; }
+.hero h1 { font: italic 700 clamp(28px, 5vw, 46px)/1.08 var(--f-display); max-width: 20ch; }
+.hero h1 em { font-style: italic; color: var(--brand); }
+.hero .lead { color: var(--ink-muted); max-width: 60ch; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chips a { text-decoration: none; font: 500 14px/1 var(--f-body); color: var(--ink-fg); border: 1px solid #3a3a37; border-radius: 999px; padding: 10px 14px; }
+.chips a:hover { border-color: var(--brand); color: var(--brand); }
+.facts { display: flex; flex-wrap: wrap; gap: 8px 28px; }
+.facts div { display: flex; align-items: baseline; gap: 8px; }
+.facts b { font: italic 700 24px/1 var(--f-display); font-variant-numeric: tabular-nums; }
+.facts small { font-size: 13px; color: var(--ink-muted); }
+
+/* Seções */
+section { padding-block: 56px; scroll-margin-top: 8px; }
+section + section { border-top: 1px solid var(--line); }
+.head { display: grid; gap: 8px; margin-bottom: 24px; max-width: 64ch; }
+.head h2 { font: italic 700 clamp(24px, 3.6vw, 32px)/1.15 var(--f-display); }
+.head p { color: var(--muted); }
+
+/* Diagramas */
+figure { margin: 0; display: grid; gap: 14px; }
+.canvas { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px 12px; overflow-x: auto; }
+.dg { display: block; width: 100%; max-width: 440px; height: auto; margin: 0 auto; color: var(--fg); }
+figcaption { color: var(--muted); font-size: 14px; max-width: 64ch; }
+.dg .n { fill: var(--surface); stroke: var(--fg); stroke-width: 1.25; }
+.dg .hl { fill: var(--brand); stroke: var(--on-brand); }
+.dg .box { fill: none; stroke: var(--line-strong); stroke-width: 1; stroke-dasharray: 4 4; }
+.dg .e { stroke: var(--fg); stroke-width: 1.25; fill: none; }
+.dg .e2 { stroke: var(--muted); stroke-width: 1.25; fill: none; stroke-dasharray: 3 3; }
+.dg .mk { fill: var(--fg); }
+.dg .mk2 { fill: var(--muted); }
+.dg text { font-family: var(--f-body); fill: var(--fg); }
+.dg .t { font-size: 12.5px; font-weight: 600; text-anchor: middle; }
+.dg .s { font-size: 11px; fill: var(--muted); text-anchor: middle; }
+.dg .hl-t { fill: var(--on-brand); }
+.dg .l { font-size: 11px; fill: var(--muted); }
+.dg .cap { font-size: 12px; font-weight: 600; fill: var(--muted); letter-spacing: .04em; }
+.dg .r { font-family: var(--f-mono); font-size: 12px; font-weight: 500; }
+.dg .lock { fill: var(--fg); }
+.dg .lock-t { fill: var(--bg); font-size: 11px; font-weight: 600; text-anchor: middle; }
+.dg .track { stroke: var(--line-strong); stroke-width: 1; stroke-dasharray: 2 4; }
+
+/* Coleções */
+.groups { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin-top: 28px; }
+.group { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: grid; gap: 10px; align-content: start; }
+.group h3 { font-size: 13px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.group ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.group li { display: grid; grid-template-columns: minmax(0, 9.5em) minmax(0, 1fr); gap: 10px; font-size: 14px; align-items: baseline; }
+.group li code { font-size: 12.5px; overflow-wrap: anywhere; }
+.group li span { color: var(--muted); }
+
+/* Financeiro */
+.money { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 20px; display: grid; gap: 18px; }
+.money-top { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 16px; align-items: baseline; }
+.money-top b { font: italic 700 26px/1 var(--f-display); font-variant-numeric: tabular-nums; }
+.money-top span { color: var(--muted); font-size: 14px; }
+.bar { display: flex; gap: 3px; min-height: 64px; }
+.seg { border-radius: 6px; padding: 8px 10px; display: grid; align-content: center; gap: 2px; font-size: 12.5px; line-height: 1.3; min-width: 0; }
+.seg b { font-weight: 600; }
+.seg.rec { flex: 1000 1 0; background: var(--brand); color: var(--on-brand); }
+.seg.prog { flex: 500 1 0; border: 1.5px dashed var(--line-strong); color: var(--fg); background: repeating-linear-gradient(135deg, transparent 0 6px, var(--code-bg) 6px 12px); }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: var(--muted); }
+.legend i { display: inline-block; width: 14px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
+.legend .k1 { background: var(--brand); }
+.legend .k2 { border: 1.5px dashed var(--line-strong); }
+.derived { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; margin: 0; }
+.derived div { background: var(--surface); padding: 12px 14px; display: grid; gap: 2px; }
+.derived dt { font-size: 12.5px; color: var(--muted); }
+.derived dd { margin: 0; font-weight: 600; font-variant-numeric: tabular-nums; }
+.derived small { font-size: 12px; color: var(--muted); font-weight: 400; }
+
+/* Testes */
+.tests { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+.tests li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; align-items: baseline; }
+.tests .what { font-size: 14px; }
+.tests .file { grid-column: 1; font-size: 12.5px; color: var(--muted); }
+.tests .n { grid-column: 2; grid-row: 1 / span 2; font: italic 700 22px/1 var(--f-display); font-variant-numeric: tabular-nums; align-self: center; }
+.tests .meter { grid-column: 1 / -1; height: 6px; background: var(--code-bg); border-radius: 3px; overflow: hidden; }
+.tests .meter span { display: block; height: 100%; background: var(--fg); }
+.total { margin-top: 18px; font-size: 14px; color: var(--muted); }
+
+/* Mais */
+.more { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.more a { text-decoration: none; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px; display: grid; gap: 4px; }
+.more a:hover { border-color: var(--fg); }
+.more b { font-weight: 600; }
+.more span { color: var(--muted); font-size: 14px; }
+footer { padding-block: 24px calc(44px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
+
+@media (max-width: 560px) {
+  .hero .wrap { padding-block: 40px 28px; }
+  section { padding-block: 44px; }
+  .canvas { padding: 14px 6px; }
+}
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="mark" aria-label="PILOTAGEM">
+      <img src="../img/simbolo-amarelo.png" alt="" width="600" height="348">
+      <span>PILOTAGEM</span>
+    </div>
+    <h1>Como o sistema funciona <em>por dentro</em></h1>
+    <p class="lead">A arquitetura, o banco de dados e as duas regras que mais importam para a academia: nenhum simulador reservado para dois clientes ao mesmo tempo, e dinheiro vendido nunca confundido com dinheiro recebido.</p>
+    <nav class="chips" aria-label="Seções">
+      <a href="#arquitetura">Arquitetura</a>
+      <a href="#banco-de-dados">Banco de dados</a>
+      <a href="#concorrencia">Reservas sem conflito</a>
+      <a href="#financeiro">Regra financeira</a>
+      <a href="#testes">Testes</a>
+    </nav>
+    <div class="facts">
+      <div><b>18</b><small>coleções no MongoDB</small></div>
+      <div><b>59</b><small>testes automatizados</small></div>
+      <div><b>4</b><small>perfis de acesso</small></div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section class="wrap" id="arquitetura">
+    <div class="head">
+      <p class="eyebrow">Stack MERN</p>
+      <h2>Arquitetura</h2>
+      <p>A interface em React conversa com uma API em Node.js e Express. Toda requisição passa por três verificações antes de chegar às regras de negócio.</p>
+    </div>
+    <figure>
+      <div class="canvas">
+        <svg class="dg" viewBox="0 0 360 556" role="img" aria-label="Caminho de uma requisição: o navegador envia HTTP com token JWT para a API; a API confere o token, a permissão do perfil e o formato dos dados, recusando com 401, 403 ou 400; depois o controlador chama o serviço com as regras de negócio, que usa o modelo Mongoose para ler e gravar no MongoDB.">
+          <defs>
+            <marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path class="mk" d="M0 0L10 5L0 10z"/></marker>
+            <marker id="a1m" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path class="mk2" d="M0 0L10 5L0 10z"/></marker>
+          </defs>
+          <rect class="n" x="20" y="8" width="240" height="52" rx="6"/>
+          <text class="t" x="140" y="30">Navegador</text>
+          <text class="s" x="140" y="47">React · Vite · Tailwind CSS</text>
+          <line class="e" x1="140" y1="60" x2="140" y2="96" marker-end="url(#a1)"/>
+          <text class="l" x="150" y="82">HTTP/JSON com token JWT</text>
+
+          <rect class="box" x="8" y="102" width="344" height="370" rx="10"/>
+          <text class="cap" x="22" y="122">API · Node.js + Express</text>
+
+          <rect class="n" x="36" y="132" width="208" height="40" rx="5"/>
+          <text class="t" x="140" y="149">Autenticação</text>
+          <text class="s" x="140" y="164">confere o token JWT</text>
+          <line class="e2" x1="244" y1="152" x2="286" y2="152" marker-end="url(#a1m)"/>
+          <text class="r" x="292" y="150">401</text>
+          <text class="l" x="292" y="164">recusa</text>
+          <line class="e" x1="140" y1="172" x2="140" y2="186" marker-end="url(#a1)"/>
+
+          <rect class="n" x="36" y="186" width="208" height="40" rx="5"/>
+          <text class="t" x="140" y="203">Permissão (RBAC)</text>
+          <text class="s" x="140" y="218">este perfil pode usar a rota?</text>
+          <line class="e2" x1="244" y1="206" x2="286" y2="206" marker-end="url(#a1m)"/>
+          <text class="r" x="292" y="204">403</text>
+          <text class="l" x="292" y="218">recusa</text>
+          <line class="e" x1="140" y1="226" x2="140" y2="240" marker-end="url(#a1)"/>
+
+          <rect class="n" x="36" y="240" width="208" height="40" rx="5"/>
+          <text class="t" x="140" y="257">Validação (Zod)</text>
+          <text class="s" x="140" y="272">os dados estão no formato?</text>
+          <line class="e2" x1="244" y1="260" x2="286" y2="260" marker-end="url(#a1m)"/>
+          <text class="r" x="292" y="258">400</text>
+          <text class="l" x="292" y="272">recusa</text>
+          <line class="e" x1="140" y1="280" x2="140" y2="294" marker-end="url(#a1)"/>
+
+          <rect class="n" x="36" y="294" width="208" height="40" rx="5"/>
+          <text class="t" x="140" y="311">Controlador</text>
+          <text class="s" x="140" y="326">traduz a requisição HTTP</text>
+          <line class="e" x1="140" y1="334" x2="140" y2="348" marker-end="url(#a1)"/>
+
+          <rect class="n hl" x="36" y="348" width="208" height="40" rx="5"/>
+          <text class="t hl-t" x="140" y="365">Serviço</text>
+          <text class="s hl-t" x="140" y="380">regras, bloqueios e auditoria</text>
+          <line class="e" x1="140" y1="388" x2="140" y2="402" marker-end="url(#a1)"/>
+
+          <rect class="n" x="36" y="402" width="208" height="40" rx="5"/>
+          <text class="t" x="140" y="419">Modelo (Mongoose)</text>
+          <text class="s" x="140" y="434">acesso às coleções</text>
+
+          <line class="e" x1="140" y1="442" x2="140" y2="494" marker-end="url(#a1)"/>
+          <text class="l" x="150" y="488">lê e grava</text>
+          <rect class="n" x="20" y="496" width="240" height="52" rx="6"/>
+          <text class="t" x="140" y="518">MongoDB</text>
+          <text class="s" x="140" y="535">18 coleções · instalação local</text>
+        </svg>
+      </div>
+      <figcaption>As regras de negócio ficam todas na camada de serviço, em destaque. As permissões são conferidas no servidor em toda rota; a interface só usa a lista de permissões para esconder o que o perfil não pode usar. Na apresentação, o comando <code>npm run demo</code> faz a própria API servir a interface, num único endereço.</figcaption>
+    </figure>
+  </section>
+
+  <section class="wrap" id="banco-de-dados">
+    <div class="head">
+      <p class="eyebrow">MongoDB · orientado a documentos</p>
+      <h2>Banco de dados</h2>
+      <p>Um atendimento atravessa dois caminhos a partir do cliente: o da operação, que ocupa sala e simulador, e o do financeiro, que registra quanto foi vendido e quanto entrou.</p>
+    </div>
+    <figure>
+      <div class="canvas">
+        <svg class="dg" viewBox="0 0 360 336" role="img" aria-label="A partir do Cliente saem dois caminhos. Operação: o cliente agenda um Agendamento, que gera uma Reserva, que ocupa Sala e simulador. Financeiro: o cliente compra uma Venda, com um ou mais Pagamentos, cada um com uma ou mais Parcelas. Venda e Agendamento se ligam em muitos para muitos.">
+          <defs>
+            <marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path class="mk" d="M0 0L10 5L0 10z"/></marker>
+            <marker id="a2m" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path class="mk2" d="M0 0L10 5L0 10z"/></marker>
+          </defs>
+          <rect class="n" x="90" y="8" width="180" height="46" rx="6"/>
+          <text class="t" x="180" y="28">Cliente</text>
+          <text class="s" x="180" y="44">nome, sobrenome, telefone</text>
+
+          <line class="e" x1="150" y1="54" x2="90" y2="98" marker-end="url(#a2)"/>
+          <text class="l" x="112" y="74" text-anchor="end">agenda</text>
+          <line class="e" x1="210" y1="54" x2="270" y2="98" marker-end="url(#a2)"/>
+          <text class="l" x="248" y="74">compra</text>
+
+          <rect class="n" x="8" y="100" width="150" height="46" rx="6"/>
+          <text class="t" x="83" y="120">Agendamento</text>
+          <text class="s" x="83" y="136">instrutor e horário</text>
+
+          <rect class="n" x="202" y="100" width="150" height="46" rx="6"/>
+          <text class="t" x="277" y="120">Venda</text>
+          <text class="s" x="277" y="136">preço congelado</text>
+
+          <line class="e2" x1="160" y1="128" x2="200" y2="128" marker-start="url(#a2m)" marker-end="url(#a2m)"/>
+          <text class="l" x="180" y="121" text-anchor="middle">N:N</text>
+
+          <line class="e" x1="83" y1="146" x2="83" y2="188" marker-end="url(#a2)"/>
+          <text class="l" x="91" y="171">gera uma</text>
+          <rect class="n" x="8" y="190" width="150" height="46" rx="6"/>
+          <text class="t" x="83" y="210">Reserva</text>
+          <text class="s" x="83" y="226">ocupação no horário</text>
+
+          <line class="e" x1="277" y1="146" x2="277" y2="188" marker-end="url(#a2)"/>
+          <text class="l" x="285" y="171">1 ou mais</text>
+          <rect class="n" x="202" y="190" width="150" height="46" rx="6"/>
+          <text class="t" x="277" y="210">Pagamento</text>
+          <text class="s" x="277" y="226">ex.: crédito em 2x</text>
+
+          <line class="e" x1="83" y1="236" x2="83" y2="278" marker-end="url(#a2)"/>
+          <text class="l" x="91" y="261">ocupa</text>
+          <rect class="n" x="8" y="280" width="150" height="46" rx="6"/>
+          <text class="t" x="83" y="300">Sala e simulador</text>
+          <text class="s" x="83" y="316">status físico próprio</text>
+
+          <line class="e" x1="277" y1="236" x2="277" y2="278" marker-end="url(#a2)"/>
+          <text class="l" x="285" y="261">1 ou mais</text>
+          <rect class="n hl" x="202" y="280" width="150" height="46" rx="6"/>
+          <text class="t hl-t" x="277" y="300">Parcela</text>
+          <text class="s hl-t" x="277" y="316">unidade de recebimento</text>
+        </svg>
+      </div>
+      <figcaption>A venda guarda uma cópia do preço de cada item no momento da compra, então mudar o catálogo não altera o histórico. Os itens da venda e os itens de um pacote ficam embutidos no próprio documento. A parcela, em destaque, é o único registro que conta como dinheiro em caixa.</figcaption>
+    </figure>
+
+    <div class="groups">
+      <div class="group">
+        <h3>Cadastros</h3>
+        <ul>
+          <li><code>Client</code><span>clientes, com opção confidencial</span></li>
+          <li><code>Instructor</code><span>instrutores</span></li>
+          <li><code>User</code><span>usuários e perfis de acesso</span></li>
+        </ul>
+      </div>
+      <div class="group">
+        <h3>Catálogo</h3>
+        <ul>
+          <li><code>Service</code><span>serviços, com preço por quantidade</span></li>
+          <li><code>Package</code><span>pacotes, com itens embutidos</span></li>
+        </ul>
+      </div>
+      <div class="group">
+        <h3>Operação</h3>
+        <ul>
+          <li><code>Appointment</code><span>agendamentos</span></li>
+          <li><code>Reservation</code><span>reservas de sala e equipamento</span></li>
+          <li><code>Room</code><span>salas</span></li>
+          <li><code>Resource</code><span>simuladores e equipamentos</span></li>
+        </ul>
+      </div>
+      <div class="group">
+        <h3>Financeiro</h3>
+        <ul>
+          <li><code>Sale</code><span>vendas</span></li>
+          <li><code>Payment</code><span>pagamentos</span></li>
+          <li><code>Installment</code><span>parcelas</span></li>
+          <li><code>Expense</code><span>despesas</span></li>
+          <li><code>FinancialCategory</code><span>categorias financeiras</span></li>
+        </ul>
+      </div>
+      <div class="group">
+        <h3>Controle</h3>
+        <ul>
+          <li><code>AuditLog</code><span>registro de ações sensíveis</span></li>
+          <li><code>Lock</code><span>bloqueios de reserva</span></li>
+          <li><code>Counter</code><span>códigos sequenciais</span></li>
+          <li><code>Settings</code><span>configurações gerais</span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap" id="concorrencia">
+    <div class="head">
+      <p class="eyebrow">Controle de concorrência</p>
+      <h2>Dois pedidos, um simulador</h2>
+      <p>O MongoDB instalado localmente não tem transações entre documentos. Para duas recepcionistas não reservarem o mesmo simulador no mesmo segundo, o sistema usa um bloqueio próprio.</p>
+    </div>
+    <figure>
+      <div class="canvas">
+        <svg class="dg" viewBox="0 0 360 460" role="img" aria-label="Linha do tempo: a Recepção 1 e a Recepção 2 pedem o Simulador 2 às 14h ao mesmo tempo. A Recepção 1 cria o bloqueio; a Recepção 2 encontra a chave já existente e espera, tentando de novo a cada cerca de 50 ms por até 6 segundos. A Recepção 1 confere que o horário está livre, grava o agendamento e libera o bloqueio. A Recepção 2 então cria o bloqueio, confere os conflitos, encontra o horário ocupado e a reserva é recusada.">
+          <defs>
+            <marker id="a3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path class="mk" d="M0 0L10 5L0 10z"/></marker>
+            <marker id="a3m" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path class="mk2" d="M0 0L10 5L0 10z"/></marker>
+          </defs>
+          <text class="t" x="75" y="18">Recepção 1</text>
+          <text class="t" x="180" y="18">Bloqueio</text>
+          <text class="t" x="285" y="18">Recepção 2</text>
+
+          <line class="track" x1="180" y1="30" x2="180" y2="452"/>
+
+          <rect class="n" x="8" y="32" width="134" height="40" rx="5"/>
+          <text class="t" x="75" y="49">pede Simulador 2</text>
+          <text class="s" x="75" y="64">14h00 às 15h00</text>
+          <rect class="n" x="218" y="32" width="134" height="40" rx="5"/>
+          <text class="t" x="285" y="49">pede Simulador 2</text>
+          <text class="s" x="285" y="64">14h00 às 15h00</text>
+
+          <rect class="n" x="8" y="86" width="134" height="40" rx="5"/>
+          <text class="t" x="75" y="103">cria o bloqueio</text>
+          <text class="s" x="75" y="118">consegue</text>
+          <line class="e" x1="142" y1="106" x2="164" y2="106" marker-end="url(#a3)"/>
+          <rect class="n" x="218" y="86" width="134" height="40" rx="5"/>
+          <text class="t" x="285" y="103">cria o bloqueio</text>
+          <text class="s" x="285" y="118">chave já existe</text>
+          <line class="e2" x1="218" y1="106" x2="198" y2="106"/>
+          <line class="e2" x1="203" y1="100" x2="211" y2="112"/>
+          <line class="e2" x1="211" y1="100" x2="203" y2="112"/>
+
+          <rect class="lock" x="166" y="86" width="28" height="182" rx="4"/>
+          <text class="lock-t" x="180" y="181">R1</text>
+
+          <rect class="n" x="8" y="140" width="134" height="40" rx="5"/>
+          <text class="t" x="75" y="157">confere conflitos</text>
+          <text class="s" x="75" y="172">horário livre</text>
+
+          <rect class="n" x="8" y="194" width="134" height="40" rx="5"/>
+          <text class="t" x="75" y="211">grava agendamento</text>
+          <text class="s" x="75" y="226">e reserva</text>
+
+          <rect class="n" x="8" y="248" width="134" height="40" rx="5"/>
+          <text class="t" x="75" y="265">libera o bloqueio</text>
+          <text class="s" x="75" y="280">fim da operação</text>
+
+          <line class="e2" x1="232" y1="132" x2="232" y2="294" marker-end="url(#a3m)"/>
+          <text class="l" x="242" y="196">tenta de novo</text>
+          <text class="l" x="242" y="211">a cada ~50 ms,</text>
+          <text class="l" x="242" y="226">por até 6 s</text>
+
+          <text class="l" x="180" y="289" text-anchor="middle">livre</text>
+
+          <rect class="n" x="218" y="302" width="134" height="40" rx="5"/>
+          <text class="t" x="285" y="319">cria o bloqueio</text>
+          <text class="s" x="285" y="334">agora consegue</text>
+          <line class="e" x1="218" y1="322" x2="196" y2="322" marker-end="url(#a3)"/>
+
+          <rect class="lock" x="166" y="302" width="28" height="148" rx="4"/>
+          <text class="lock-t" x="180" y="380">R2</text>
+
+          <rect class="n" x="218" y="356" width="134" height="40" rx="5"/>
+          <text class="t" x="285" y="373">confere conflitos</text>
+          <text class="s" x="285" y="388">horário ocupado</text>
+
+          <rect class="n hl" x="218" y="410" width="134" height="40" rx="5"/>
+          <text class="t hl-t" x="285" y="427">recusa a reserva</text>
+          <text class="s hl-t" x="285" y="442">aviso de conflito</text>
+        </svg>
+      </div>
+      <figcaption>O bloqueio é um documento cujo identificador combina o tipo e o código do recurso, por exemplo <code>resource:&lt;id do simulador&gt;</code>. Como esse identificador é único no banco, só um pedido consegue criá-lo por vez. Cada bloqueio vale 15 segundos, então uma queda do servidor não prende o simulador. Um teste automatizado dispara dois pedidos idênticos ao mesmo tempo e confere que só um é aceito.</figcaption>
+    </figure>
+  </section>
+
+  <section class="wrap" id="financeiro">
+    <div class="head">
+      <p class="eyebrow">Regime de caixa</p>
+      <h2>Vendido não é recebido</h2>
+      <p>Exemplo de uma venda de R$ 2.000,00: metade no Pix na hora, metade no cartão de crédito em 2x. O cartão só conta como recebido quando o repasse é confirmado.</p>
+    </div>
+    <div class="money">
+      <div class="money-top">
+        <b>R$ 2.000,00</b>
+        <span>valor contratado · guardado como <code>200000</code> centavos</span>
+      </div>
+      <div class="bar" role="img" aria-label="R$ 1.000 recebidos no Pix e duas parcelas de R$ 500 no crédito, ainda programadas.">
+        <div class="seg rec"><b>Pix · R$ 1.000</b><span>recebida</span></div>
+        <div class="seg prog"><b>Crédito 1/2</b><span>R$ 500</span></div>
+        <div class="seg prog"><b>Crédito 2/2</b><span>R$ 500</span></div>
+      </div>
+      <div class="legend"><span><i class="k1"></i>recebido: conta como caixa</span><span><i class="k2"></i>programado: ainda não entrou</span></div>
+      <dl class="derived">
+        <div><dt>Recebido</dt><dd>R$ 1.000,00 <small>parcelas recebidas</small></dd></div>
+        <div><dt>Programado</dt><dd>R$ 1.000,00 <small>parcelas pendentes</small></dd></div>
+        <div><dt>Saldo pendente</dt><dd>R$ 1.000,00 <small>contratado − recebido</small></dd></div>
+        <div><dt>Situação</dt><dd>Parcial</dd></div>
+      </dl>
+    </div>
+    <p class="total">Ninguém digita esses totais: o sistema recalcula tudo a partir das parcelas a cada operação. Estornos e cancelamentos não apagam nada; ficam no histórico com motivo, autor e data.</p>
+  </section>
+
+  <section class="wrap" id="testes">
+    <div class="head">
+      <p class="eyebrow">node:test + supertest</p>
+      <h2>59 testes automatizados</h2>
+      <p>Rodam contra um banco de testes separado, que é apagado ao final.</p>
+    </div>
+    <ul class="tests">
+      <li><span class="what">Permissões de cada perfil em cada rota</span><span class="n">20</span><code class="file">permissions.test.js</code><span class="meter"><span style="width:100%"></span></span></li>
+      <li><span class="what">Cálculos em centavos, parcelas, descontos e fuso horário</span><span class="n">11</span><code class="file">finance.calc.test.js</code><span class="meter"><span style="width:55%"></span></span></li>
+      <li><span class="what">Conflitos de sala, simulador e instrutor, inclusive pedidos simultâneos</span><span class="n">9</span><code class="file">availability.test.js</code><span class="meter"><span style="width:45%"></span></span></li>
+      <li><span class="what">Vendas, pagamentos parciais, estornos e preço histórico</span><span class="n">7</span><code class="file">finance.test.js</code><span class="meter"><span style="width:35%"></span></span></li>
+      <li><span class="what">Roteiro completo da apresentação, da venda ao relatório</span><span class="n">7</span><code class="file">demo-flow.test.js</code><span class="meter"><span style="width:35%"></span></span></li>
+      <li><span class="what">Clientes confidenciais e revelação auditada</span><span class="n">5</span><code class="file">privacy.test.js</code><span class="meter"><span style="width:25%"></span></span></li>
+    </ul>
+  </section>
+
+  <section class="wrap" id="mais">
+    <div class="head">
+      <h2>Mais do projeto</h2>
+    </div>
+    <div class="more">
+      <a href="../"><b>Telas do sistema</b><span>Capturas de cada perfil e o roteiro da demonstração.</span></a>
+      <a href="https://github.com/gusanchez1/pilotagem"><b>Código no GitHub</b><span>Repositório completo, com instruções para rodar localmente.</span></a>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">PILOTAGEM · MVP acadêmico de Ciência da Computação apresentado no 4º CONTEEX. Dados das telas e exemplos são fictícios.</div>
+</footer>
+
+<script>
+function goToHash() {
+  const id = decodeURIComponent(location.hash.slice(1));
+  if (!id) return;
+  const el = document.getElementById(id);
+  if (el) el.scrollIntoView({ block: 'start' });
+}
+addEventListener('hashchange', goToHash);
+addEventListener('load', goToHash);
+</script>
+</body>
+</html>
